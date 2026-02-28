@@ -13,12 +13,14 @@ class InfoActivity : AppCompatActivity() {
         val start = prefs.getInt("startHour", -1)
         val end = prefs.getInt("endHour", -1)
         val interval = prefs.getInt("intervalMinutes", -1)
+        val isEnabled = prefs.getBoolean("enabled", true)
+        val stato = if (isEnabled) "✅ Attivo" else "🔕 Disattivato"
 
         val txt = findViewById<TextView>(R.id.txtCurrentSettings)
         if (start == -1) {
             txt.text = "Nessuna impostazione salvata ancora."
         } else {
-            txt.text = "🕐 Inizio notifiche: ore $start:00\n🕙 Fine notifiche: ore $end:00\n⏱️ Ogni: $interval minuti"
+            txt.text = "Stato: $stato\n🕐 Inizio notifiche: ore $start:00\n🕙 Fine notifiche: ore $end:00\n⏱️ Ogni: $interval minuti"
         }
     }
 }
