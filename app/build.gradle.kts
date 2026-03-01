@@ -1,3 +1,9 @@
+import java.util.Properties
+
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) localProps.load(localPropsFile.inputStream())
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -16,8 +22,14 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DYNATRACE_APP_ID", "\"${localProps["dynatrace.appId"]}\"")
+        buildConfigField("String", "DYNATRACE_BEACON_URL", "\"${localProps["dynatrace.beaconUrl"]}\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -44,4 +56,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("com.dynatrace.agent:agent-android:8.+")
 }
