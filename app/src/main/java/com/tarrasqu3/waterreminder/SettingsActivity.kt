@@ -9,6 +9,7 @@ import android.widget.NumberPicker
 import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.dynatrace.android.agent.Dynatrace
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,7 +31,6 @@ class SettingsActivity : AppCompatActivity() {
         pickerInterval.maxValue = intervals.size - 1
         pickerInterval.displayedValues = intervals
 
-        // Carica valori salvati
         val prefs = getSharedPreferences("settings", MODE_PRIVATE)
         switchEnabled.isChecked = prefs.getBoolean("enabled", true)
         pickerStart.value = prefs.getInt("startHour", 8)
@@ -39,7 +39,6 @@ class SettingsActivity : AppCompatActivity() {
         val savedIndex = intervalValues.indexOfFirst { it == savedInterval }
         if (savedIndex >= 0) pickerInterval.value = savedIndex
 
-        // Funzione per aggiornare lo stato visivo dei picker
         fun updatePickersState(enabled: Boolean) {
             pickerStart.isEnabled = enabled
             pickerEnd.isEnabled = enabled
@@ -49,10 +48,8 @@ class SettingsActivity : AppCompatActivity() {
             pickerInterval.alpha = if (enabled) 1f else 0.4f
         }
 
-        // Applica subito al caricamento
         updatePickersState(switchEnabled.isChecked)
 
-        // Aggiorna quando l'utente tocca lo switch
         switchEnabled.setOnCheckedChangeListener { _, isChecked ->
             updatePickersState(isChecked)
         }
@@ -70,9 +67,13 @@ class SettingsActivity : AppCompatActivity() {
             if (isEnabled) {
                 WaterReminderReceiver.scheduleNextAlarm(this, intervalValues[pickerInterval.value])
                 WaterReminderReceiver.sendTestNotification(this)
+
+                // Traccia su Dynatrace
+                val action = Dynatrace.enterAction("Promemoria attivato - ogni ${intervalValues[pickerInterval.value]} min")
+                action?.leaveAction()
+
                 Toast.makeText(this, "✅ Promemoria attivato!", Toast.LENGTH_SHORT).show()
             } else {
-                // Cancella l'allarme esistente
                 val alarmManager = getSystemService(AlarmManager::class.java)
                 val intent = Intent(this, WaterReminderReceiver::class.java)
                 val pendingIntent = PendingIntent.getBroadcast(
@@ -80,6 +81,11 @@ class SettingsActivity : AppCompatActivity() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 alarmManager.cancel(pendingIntent)
+
+                // Traccia su Dynatrace
+                val action = Dynatrace.enterAction("Promemoria disattivato")
+                action?.leaveAction()
+
                 Toast.makeText(this, "🔕 Promemoria disattivato!", Toast.LENGTH_SHORT).show()
             }
 
